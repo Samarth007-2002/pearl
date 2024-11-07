@@ -1,0 +1,45 @@
+name: Deploy and Destroy Terraform
+
+on:
+  push:
+    paths:
+      - "main.tf"  # Trigger only when main.tf is changed
+
+jobs:
+  deploy-and-destroy:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: us-east-1  # Set your AWS region here
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.4.6  # Update to your desired Terraform version
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Apply
+        id: apply
+        run: terraform apply -auto-approve
+        timeout-minutes: 10
+
+      - name: Wait for 30 minutes
+        run: sleep 1800
+
+      - name: Terraform Destroy
+        if: always()  # Ensures destroy runs even if previous steps fail
+        run: terraform destroy -auto-approve
+        timeout-minutes: 10
