@@ -2,6 +2,8 @@ name: Deploy and Destroy Terraform
 
 on:
   push:
+    branches:
+      - "*" 
     paths:
       - "main.tf"  # Trigger only when main.tf is changed
 
