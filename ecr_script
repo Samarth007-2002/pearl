@@ -1,0 +1,47 @@
+#!/bin/bash
+
+# Variables
+REPO_NAME=$1 # First argument is the repository name
+REGION="us-west-2"  # Replace with your preferred AWS region
+
+# Create a new ECR repository
+echo "Creating new ECR repository: $REPO_NAME"
+aws ecr create-repository \
+  --repository-name $REPO_NAME \
+  --region $REGION
+
+if [ $? -ne 0 ]; then
+  echo "Failed to create the repository $REPO_NAME."
+  exit 1
+fi
+
+echo "Repository $REPO_NAME created successfully."
+
+# Enable basic image scanning (scanOnPush=true)
+echo "Enabling basic image scanning for repository: $REPO_NAME"
+aws ecr put-image-scanning-configuration \
+  --repository-name $REPO_NAME \
+  --image-scanning-configuration scanOnPush=true \
+  --region $REGION
+
+if [ $? -ne 0 ]; then
+  echo "Failed to enable basic image scanning for $REPO_NAME."
+  exit 1
+fi
+
+echo "Basic image scanning enabled for repository: $REPO_NAME."
+
+# Enable enhanced image scanning
+echo "Enabling enhanced image scanning for repository: $REPO_NAME"
+aws ecr put-image-scanning-configuration \
+  --repository-name $REPO_NAME \
+  --image-scanning-configuration scanOnPush=true \
+  --scan-type "ENHANCED" \
+  --region $REGION
+
+if [ $? -ne 0 ]; then
+  echo "Failed to enable enhanced image scanning for $REPO_NAME."
+  exit 1
+fi
+
+echo "Enhanced image scanning enabled for repository: $REPO_NAME."
