@@ -1,32 +1,35 @@
 #!/bin/bash
 
 # Variables
-REPO_NAME=$1 # First argument is the repository name
 REGION="us-west-2"  # Replace with your preferred AWS region
 
-# Create a new ECR repository
-echo "Creating new ECR repository: $REPO_NAME"
-aws ecr create-repository \
-  --repository-name $REPO_NAME \
-  --region $REGION
+# Fetch all existing repositories
+echo "Fetching existing ECR repositories..."
+REPO_LIST=$(aws ecr describe-repositories --region $REGION --query 'repositories[*].repositoryName' --output text)
 
 if [ $? -ne 0 ]; then
-  echo "Failed to create the repository $REPO_NAME."
+  echo "Failed to fetch ECR repositories."
   exit 1
 fi
 
-echo "Repository $REPO_NAME created successfully."
+# Loop through each repository and enable scanning
+for REPO_NAME in $REPO_LIST
+do
+  echo "Enabling image scanning for repository: $REPO_NAME"
 
-# Enable basic image scanning (scanOnPush=true)
-echo "Enabling basic image scanning for repository: $REPO_NAME"
-aws ecr put-image-scanning-configuration \
-  --repository-name $REPO_NAME \
-  --image-scanning-configuration scanOnPush=true \
-  --region $REGION
+  # Enable basic image scanning (scanOnPush=true)
+  aws ecr put-image-scanning-configuration \
+    --repository-name $REPO_NAME \
+    --image-scanning-configuration scanOnPush=true \
+    --region $REGION
 
-if [ $? -ne 0 ]; then
-  echo "Failed to enable basic image scanning for $REPO_NAME."
-  exit 1
-fi
+  if [ $? -ne 0 ]; then
+    echo "Failed to enable image scanning for repository: $REPO_NAME."
+    continue
+  fi
 
-echo "Basic image scanning enabled for repository: $REPO_NAME."
+  echo "Basic image scanning enabled for repository: $REPO_NAME."
+done
+
+echo "Image scanning enabled for all repositories."
+
